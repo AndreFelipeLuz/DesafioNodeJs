@@ -15,10 +15,11 @@ export default class Professor extends BaseModel {
   @column({columnName: 'DataDeNascimento'})
   public dataDeNascimento:Date
 
-  @hasMany(() => Sala,{
-    foreignKey: 'MatriculaProfessor'
+  @hasMany(() => Sala, {
+    localKey: 'matriculaProfessor',
+    foreignKey: 'matriculaProfessor'
   })
-  public Salas:HasMany<typeof Sala>
+  public salas:HasMany<typeof Sala>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

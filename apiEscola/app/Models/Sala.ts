@@ -3,16 +3,16 @@ import { BaseModel, ManyToMany, column, manyToMany } from '@ioc:Adonis/Lucid/Orm
 import Aluno from './Aluno'
 
 export default class Sala extends BaseModel {
-  @column({ isPrimary: true })
+  @column({ isPrimary: true ,columnName: 'numeroSala'})
   public numeroSala: number
   
-  @column()
-  public MatriculaProfessor:number
+  @column({columnName: "MatriculaProfessor"})
+  public matriculaProfessor:number
 
-  @column()
+  @column({columnName: 'capacidadeAlunos'})
   public capacidadeAlunos:number
   
-  @column()
+  @column({columnName:'disponibilidade'})
   public disponibilidade: boolean
 
   @manyToMany(() => Aluno,{

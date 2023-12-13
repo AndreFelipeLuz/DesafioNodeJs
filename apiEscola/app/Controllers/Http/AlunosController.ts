@@ -15,6 +15,7 @@ export default class AlunosController {
     return 'Aluno Criado com sucesso'
   }
 
+
   public async update({request,params}: HttpContextContract) {
     const { matricula } = params
 
