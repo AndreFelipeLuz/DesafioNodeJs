@@ -16,7 +16,11 @@ export default class Aluno extends BaseModel {
   public dataDeNascimento:Date
 
   @manyToMany(() => Sala,{
-    pivotForeignKey: 'numeroSala'
+    localKey: 'matriculaAluno',
+    pivotForeignKey: 'MatriculaAluno',
+    relatedKey: 'numeroSala',
+    pivotRelatedForeignKey: 'numeroSala',
+    pivotTable: 'sala_aluno'
   })
   public salas: ManyToMany<typeof Sala>
 

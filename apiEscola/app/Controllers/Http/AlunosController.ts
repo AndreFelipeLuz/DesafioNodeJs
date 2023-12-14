@@ -36,6 +36,13 @@ export default class AlunosController {
     }else{
       return 'Não foi possivel Deletar o Aluno Cadastrado'
     }
-     
+  }
+    
+    public async verSalas({params}: HttpContextContract) {
+      const { matricula } = params
+
+      const aluno:Aluno|null = await Aluno.findOrFail(matricula)
+      const salas = await aluno.related('salas').query().preload('professor').firstOrFail()
+      return salas
   }
 }
