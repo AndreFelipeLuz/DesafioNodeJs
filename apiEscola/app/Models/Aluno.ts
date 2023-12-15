@@ -3,19 +3,19 @@ import { BaseModel, ManyToMany, column, manyToMany } from '@ioc:Adonis/Lucid/Orm
 import Sala from './Sala'
 
 export default class Aluno extends BaseModel {
-  @column({columnName : 'MatriculaAluno', isPrimary: true })
+  @column({ columnName: 'MatriculaAluno', isPrimary: true })
   public matriculaAluno: number
 
-  @column({columnName: 'Nome'})
+  @column({ columnName: 'Nome' })
   public nome: String
 
-  @column({columnName: 'Email'})
+  @column({ columnName: 'Email' })
   public email: String
 
-  @column({columnName: 'DataDeNascimento'})
-  public dataDeNascimento:Date
+  @column({ columnName: 'DataDeNascimento' })
+  public dataDeNascimento: Date
 
-  @manyToMany(() => Sala,{
+  @manyToMany(() => Sala, {
     localKey: 'matriculaAluno',
     pivotForeignKey: 'MatriculaAluno',
     relatedKey: 'numeroSala',

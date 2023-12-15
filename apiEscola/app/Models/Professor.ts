@@ -3,23 +3,23 @@ import { BaseModel, HasMany, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Sala from './Sala'
 
 export default class Professor extends BaseModel {
-  @column({ isPrimary: true , columnName: 'MatriculaProfessor'})
+  @column({ isPrimary: true, columnName: 'MatriculaProfessor' })
   public matriculaProfessor: number
 
-  @column({columnName: 'Nome'})
+  @column({ columnName: 'Nome' })
   public nome: String
 
-  @column({columnName: 'Email'})
+  @column({ columnName: 'Email' })
   public email: String
 
-  @column({columnName: 'DataDeNascimento'})
-  public dataDeNascimento:Date
+  @column({ columnName: 'DataDeNascimento' })
+  public dataDeNascimento: Date
 
   @hasMany(() => Sala, {
     localKey: 'matriculaProfessor',
     foreignKey: 'matriculaProfessor'
   })
-  public salas:HasMany<typeof Sala>
+  public salas: HasMany<typeof Sala>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

@@ -4,19 +4,19 @@ import Aluno from './Aluno'
 import Professor from './Professor'
 
 export default class Sala extends BaseModel {
-  @column({ isPrimary: true ,columnName: 'numeroSala'})
+  @column({ isPrimary: true, columnName: 'numeroSala' })
   public numeroSala: number
-  
-  @column({columnName: "MatriculaProfessor"})
-  public matriculaProfessor:number
 
-  @column({columnName: 'capacidadeAlunos'})
-  public capacidadeAlunos:number
-  
-  @column({columnName:'disponibilidade'})
+  @column({ columnName: "MatriculaProfessor" })
+  public matriculaProfessor: number
+
+  @column({ columnName: 'capacidadeAlunos' })
+  public capacidadeAlunos: number
+
+  @column({ columnName: 'disponibilidade' })
   public disponibilidade: boolean
 
-  @manyToMany(() => Aluno,{
+  @manyToMany(() => Aluno, {
     localKey: 'numeroSala',
     pivotForeignKey: 'numeroSala',
     relatedKey: 'matriculaAluno',
@@ -25,11 +25,11 @@ export default class Sala extends BaseModel {
   })
   public alunos: ManyToMany<typeof Aluno>
 
-  @hasOne(() => Professor,{
-    localKey:'matriculaProfessor',
-    foreignKey:'matriculaProfessor'
+  @hasOne(() => Professor, {
+    localKey: 'matriculaProfessor',
+    foreignKey: 'matriculaProfessor'
   })
-  public professor:HasOne<typeof Professor> 
+  public professor: HasOne<typeof Professor>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

@@ -2,47 +2,107 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Aluno from 'App/Models/Aluno'
 
 export default class AlunosController {
-  public async index({params}: HttpContextContract) {
-    const { matricula } = params
-    
-    return await Aluno.findOrFail(matricula)
- }
+  public async read({ params, response }: HttpContextContract) {
 
-  public async store({request}: HttpContextContract) {
-    const aluno:Aluno = await Aluno.create(request.all())
-    console.log(aluno)
-
-    return 'Aluno Criado com sucesso'
-  }
-
-
-  public async update({request,params}: HttpContextContract) {
-    const { matricula } = params
-
-    const aluno:Aluno|null = await Aluno.findOrFail(matricula)
-    aluno.nome = request.input('nome')
-    aluno.email = request.input('email')
-    aluno.dataDeNascimento = request.input('dataDeNascimento')
-
-    await aluno.save()
-    return 'Aluno Atualizado'
-  }
-
-  public async destroy({request}: HttpContextContract) {
-    const aluno:Aluno|null = await Aluno.findOrFail(request.param('matricula'))
-    if(aluno != null){
-      aluno.delete()
-      return 'Aluno deletado com sucesso'
-    }else{
-      return 'Não foi possivel Deletar o Aluno Cadastrado'
-    }
-  }
-    
-    public async verSalas({params}: HttpContextContract) {
+    try {
       const { matricula } = params
 
-      const aluno:Aluno|null = await Aluno.findOrFail(matricula)
-      const salas = await aluno.related('salas').query().preload('professor').firstOrFail()
-      return salas
+      if (isNaN(parseInt(matricula))) {
+        return response.status(400).send({ Erro: 'Matricula inválida' })
+      } else {
+        const aluno = await Aluno.find(matricula)
+        if (aluno instanceof Aluno) {
+          return response.status(200).send({ Mensagem: 'Aluno Encontrado', Aluno: aluno })
+        } else {
+          return response.status(404).send({ Erro: 'Aluno não encontrado' })
+        }
+      }
+    } catch (error) {
+      return response.status(500).send({ Erro: 'Ocorreu um Erro desconhecido' })
+    }
+  }
+
+  public async create({ response, request }: HttpContextContract) {
+    try {
+      const dataInvalida = new Date(request.input('dataDeNascimento')).toDateString() === 'Invalid Date'
+      if (typeof (request.input('nome')) === 'string' && typeof (request.input('email')) === 'string' && dataInvalida == false) {
+        const aluno: Aluno = await Aluno.create(request.all())
+        return response.status(200).send({ Mensagem: 'Aluno Criado com sucesso',Aluno : aluno })
+      } else {
+        return response.status(400).send({ Erro: 'Parâmetros inválidos' })
+      }
+    } catch (error) {
+      return response.status(500).send({ Mensagem: 'Ocorreu um Erro desconhecido' })
+    }
+  }
+
+  public async update({ request, response, params }: HttpContextContract) {
+    try {
+      const { matricula } = params
+
+      if (isNaN(parseInt(matricula))) {
+        return response.status(400).send({ Erro: 'Matricula inválida' })
+      } else {
+        const aluno = await Aluno.find(matricula)
+        if (aluno instanceof Aluno) {
+          if (new Date(request.input('dataDeNascimento')).toDateString() === 'Invalid Date' && (typeof (request.input('dataDeNascimento') !== 'string'))) {
+            return response.status(400).send({ erro: 'Insira uma data Valida' })
+          } else {
+            aluno.nome = request.input('nome')
+            aluno.email = request.input('email')
+            aluno.dataDeNascimento = request.input('dataDeNascimento')
+
+            await aluno.save()
+            return response.status(200).send({ Mensagem: 'Aluno Atualizado Com Sucesso' })
+          }
+        } else {
+          return response.status(404).send({ Erro: 'Aluno não encontrado' })
+        }
+      }
+    } catch (error) {
+      return response.status(500).send({ Erro: 'Ocorreu um Erro desconhecido' })
+    }
+  }
+
+  public async delete({ response, params }: HttpContextContract) {
+    try {
+      const { matricula } = params
+
+      if (isNaN(parseInt(matricula))) {
+        return response.status(400).send({ Erro: 'Matricula inválida' })
+      } else {
+        const aluno = await Aluno.find(matricula)
+        if (aluno instanceof Aluno) {
+          await aluno.delete()
+
+          return response.status(200).send({ Mensagem: 'Aluno deletado' })
+        } else {
+          return response.status(404).send({ Erro: 'Aluno não encontrado' })
+        }
+      }
+    } catch (error) {
+      return response.status(500).send({ Mensagem: 'Ocorreu um Erro desconhecido' })
+    }
+  }
+
+  public async readSalas({ params, response }: HttpContextContract) {
+    try {
+      const { matricula } = params
+
+      if (isNaN(parseInt(matricula))) {
+        return response.status(400).send({ Erro: 'Matricula inválida' })
+      } else {
+        const aluno = await Aluno.find(matricula)
+        if (aluno instanceof Aluno) {
+          const salas = await aluno.related('salas').query().preload('professor')
+
+          return response.status(200).send({ Mensagem: 'Salas Ligada ao Aluno', Salas: salas })
+        } else {
+          return response.status(404).send({ Erro: 'Aluno não encontrado' })
+        }
+      }
+    } catch (error) {
+      return response.status(500).send({ Mensagem: 'Ocorreu um Erro desconhecido' })
+    }
   }
 }
