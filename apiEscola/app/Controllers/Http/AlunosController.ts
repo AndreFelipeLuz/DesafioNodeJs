@@ -27,7 +27,7 @@ export default class AlunosController {
       const dataInvalida = new Date(request.input('dataDeNascimento')).toDateString() === 'Invalid Date'
       if (typeof (request.input('nome')) === 'string' && typeof (request.input('email')) === 'string' && dataInvalida == false) {
         const aluno: Aluno = await Aluno.create(request.all())
-        return response.status(200).send({ Mensagem: 'Aluno Criado com sucesso',Aluno : aluno })
+        return response.status(200).send({ Mensagem: 'Aluno Criado com sucesso', Aluno: aluno })
       } else {
         return response.status(400).send({ Erro: 'Parâmetros inválidos' })
       }
@@ -95,8 +95,13 @@ export default class AlunosController {
         const aluno = await Aluno.find(matricula)
         if (aluno instanceof Aluno) {
           const salas = await aluno.related('salas').query().preload('professor')
-
-          return response.status(200).send({ Mensagem: 'Salas Ligada ao Aluno', Salas: salas })
+          const dados = salas.map((sala) => {
+            return {
+              Numero_Da_Sala: sala.numeroSala,
+              Nome_do_Professor: sala.professor.nome
+            }
+          })
+          return response.status(200).send({ Nome_Do_Aluno: aluno.nome, Salas: dados })
         } else {
           return response.status(404).send({ Erro: 'Aluno não encontrado' })
         }
