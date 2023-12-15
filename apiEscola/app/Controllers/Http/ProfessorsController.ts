@@ -123,11 +123,15 @@ export default class ProfessorsController {
       } else {
         const prof = await Professor.find(matricula)
         if (prof instanceof Professor) {
-          const sala = await prof.related('salas').create(request.all())
-          sala.matriculaProfessor = matricula
-          await sala.save()
+          if (parseInt(request.input('capacidadeAlunos')) >= 5) {
+            const sala = await prof.related('salas').create(request.all())
+            sala.matriculaProfessor = matricula
+            await sala.save()
 
-          return response.status(200).send({ Mensagem: 'Sala Criada Com Sucesso', Sala: sala })
+            return response.status(200).send({ Mensagem: 'Sala Criada Com Sucesso', Sala: sala })
+          } else {
+            return response.status(403).send({ Erro: 'Digite um numero maior ou igual a 5' })
+          }
         } else {
           return response.status(404).send({ Erro: 'Professor Não Encontrado' })
         }
@@ -150,15 +154,18 @@ export default class ProfessorsController {
               const quantAlunos = (await sala.related('alunos').query()).length
               if (quantAlunos <= request.input('capacidadeAlunos')) {
                 sala.capacidadeAlunos = request.input('capacidadeAlunos')
-                sala.disponibilidade = request.input('disponibilidade', true)
-
+                if (quantAlunos == request.input('capacidadeAlunos')) {
+                  sala.disponibilidade = false
+                } else {
+                  sala.disponibilidade = true
+                }
                 await sala.save()
                 return response.status(200).send({ Mensagem: 'Sala foi atualizada com Sucesso' })
               } else {
-                return response.status(400).send({ Erro: 'Digite uma capacidade De sala Maior do que a dos estudantes ja cadastrados atualmente' })
+                return response.status(403).send({ Erro: 'Digite uma capacidade De sala Maior do que a dos estudantes ja cadastrados atualmente' })
               }
             } else {
-              return response.status(400).send({ Erro: 'Digite uma capacidade De sala Maior iu igual a 5' })
+              return response.status(403).send({ Erro: 'Digite uma capacidade De sala Maior iu igual a 5' })
             }
           } else {
             return response.status(404).send({ Erro: 'Sala Não foi encontrada ou não existe' })
@@ -167,7 +174,7 @@ export default class ProfessorsController {
           return response.status(404).send({ Erro: 'Professor Não foi encontrado ou não existe' })
         }
       } else {
-        return response.status(400).send({ Erro: 'Matricula inválida' })
+        return response.status(400).send({ Erro: 'Matricula ou Numero de Sala inválida' })
       }
     } catch (error) {
       return response.status(500).send({ Erro: 'Ocorreu um Erro desconhecido' })
@@ -192,6 +199,46 @@ export default class ProfessorsController {
           return response.status(404).send({ Erro: 'Professor Não foi encontrado ou não existe' })
         }
       } else {
+        return response.status(400).send({ Erro: 'Matricula ou Numero inválido' })
+      }
+    } catch (error) {
+      return response.status(500).send({ Erro: 'Ocorreu um Erro desconhecido' })
+    }
+  }
+
+  public async adicionarAluno({ params, response }: HttpContextContract) {
+    try {
+      const { matricula, numeroSala, matriculaAluno } = params
+
+      if (!(isNaN(parseInt(matricula))) && !(isNaN(parseInt(numeroSala))) && !(isNaN(parseInt(matriculaAluno)))) {
+        const prof: Professor | null = await Professor.find(matricula)
+        if (prof instanceof Professor) {
+          const sala: Sala | null = await prof.related('salas').query().where('numeroSala', numeroSala).first();
+          if (sala instanceof Sala) {
+            const alunosAtuais = (await sala.related('alunos').query()).length
+            const capacidadeAlunos = sala.capacidadeAlunos
+            const existeAluno = await sala.related('alunos').query().where('alunos.matriculaAluno', matriculaAluno).first() instanceof Aluno
+            if (existeAluno) {
+              return response.status(409).send({ Erro: 'Ja existe um Aluno Cadastrado' })
+            } else {
+              await sala.related('alunos').attach([matriculaAluno])
+              if (alunosAtuais < capacidadeAlunos) {
+                if (capacidadeAlunos == alunosAtuais) {
+                  sala.disponibilidade = false
+                  await sala.save()
+                }
+                return response.status(200).send({ Mensagem: 'Aluno Cadastrado Com Sucesso' })
+              } else {
+                return response.status(403).send({ Erro: 'Capacidade Maxima Atiginda' })
+              }
+            }
+          } else {
+            return response.status(404).send({ Erro: 'Sala Não foi encontrada ou não existe' })
+          }
+        } else {
+          return response.status(404).send({ Erro: 'Professor Não foi encontrado ou não existe' })
+        }
+      } else {
         return response.status(400).send({ Erro: 'Matricula inválida' })
       }
     } catch (error) {
@@ -199,46 +246,62 @@ export default class ProfessorsController {
     }
   }
 
-  public async adicionarAluno({ params }: HttpContextContract) {
-    const { matricula, numeroSala, matriculaAluno } = params
-    const prof: Professor | null = await Professor.findOrFail(matricula)
-    const sala: Sala | null = await prof.related('salas').query().where('numeroSala', numeroSala).first();
-    const alunos = await sala?.related('alunos').query();
-    const alunosAtuais = alunos?.length ?? 0
-    const capacidadeAlunos = sala?.capacidadeAlunos ?? 0
-    let existeAluno: boolean = false
+  public async deletarAluno({ params, response }: HttpContextContract) {
+    try {
+      const { matricula, numeroSala, matriculaAluno } = params
 
-    await sala?.related('alunos').query().where('alunos.matriculaAluno', matriculaAluno).first().then((aluno) => {
-      existeAluno = aluno instanceof Aluno
-    })
-    if (existeAluno) {
-      return 'Ja existe um Aluno Cadastrado'
-    } else {
-      if (alunosAtuais < capacidadeAlunos) {
-
-        await sala?.related('alunos').attach([matriculaAluno])
-        return 'Aluno Cadastrado Com Sucesso'
+      if (!(isNaN(parseInt(matricula))) && !(isNaN(parseInt(numeroSala))) && !(isNaN(parseInt(matriculaAluno)))) {
+        const prof: Professor | null = await Professor.find(matricula)
+        if (prof instanceof Professor) {
+          const sala: Sala | null = await prof.related('salas').query().where('numeroSala', numeroSala).first();
+          if (sala instanceof Sala) {
+            const existeAluno = await sala.related('alunos').query().where('alunos.matriculaAluno', matriculaAluno).first() instanceof Aluno
+            if (existeAluno) {
+              await sala.related('alunos').detach([matriculaAluno])
+              return response.status(200).send({ Mensagem: 'Aluno Apagado com Sucesso' })
+            } else {
+              return response.status(404).send({ Erro: 'Aluno Não foi encontrada ou não existe' })
+            }
+          } else {
+            return response.status(404).send({ Erro: 'Sala Não foi encontrada ou não existe' })
+          }
+        } else {
+          return response.status(404).send({ Erro: 'Professor Não foi encontrado ou não existe' })
+        }
       } else {
-        return 'capacidade maxima atiginda'
+        return response.status(400).send({ Erro: 'Matricula inválida' })
       }
+    } catch (error) {
+      return response.status(500).send({ Erro: 'Ocorreu um Erro desconhecido' })
     }
   }
 
-  public async deletarAluno({ params }: HttpContextContract) {
-    const { matricula, numeroSala, matriculaAluno } = params
+  public async listarAlunos({ params, response }: HttpContextContract) {
+    try {
+      const { matricula, numeroSala } = params
 
-    const prof: Professor | null = await Professor.findOrFail(matricula)
-    const sala: Sala | null = await prof.related('salas').query().where('numeroSala', numeroSala).first();
-    await sala?.related('alunos').detach([matriculaAluno])
-    return await sala?.related('alunos').query()
-  }
-
-  public async listarAlunos({ params }: HttpContextContract) {
-    const { matricula, numeroSala } = params
-
-    const prof: Professor | null = await Professor.findOrFail(matricula)
-    const sala: Sala | null = await prof.related('salas').query().where('numeroSala', numeroSala).first();
-
-    return await sala?.related('alunos').query()
+      if (!(isNaN(parseInt(matricula))) && !(isNaN(parseInt(numeroSala)))) {
+        const prof: Professor | null = await Professor.find(matricula)
+        if (prof instanceof Professor) {
+          const sala: Sala | null = await prof.related('salas').query().where('numeroSala', numeroSala).first();
+          if (sala instanceof Sala) {
+            const alunos = await sala.related('alunos').query()
+            if (alunos.length === 0) {
+              return response.status(404).send({ Erro: 'Lista de Alunos Não foi encontrada ou não existe' })
+            } else {
+              return response.status(200).send({ Memsagem: 'Alunos Achados', Alunos: await sala.related('alunos').query() })
+            }
+          } else {
+            return response.status(404).send({ Erro: 'Sala Não foi encontrada ou não existe' })
+          }
+        } else {
+          return response.status(404).send({ Erro: 'Professor Não foi encontrado ou não existe' })
+        }
+      } else {
+        return response.status(400).send({ Erro: 'Matricula inválida' })
+      }
+    } catch (error) {
+      return response.status(500).send({ Erro: 'Ocorreu um Erro desconhecido' })
+    }
   }
 }
